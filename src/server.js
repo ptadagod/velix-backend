@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import pairRoutes from './routes/pair.js';
+import syncRoutes from './routes/sync.js';
 import { migrate } from './db/migrate.js';
 
 dotenv.config();
@@ -21,6 +22,7 @@ app.get('/health', (_req, res) => res.json({ ok: true }));
 
 app.use('/auth', authRoutes);
 app.use('/pair', pairRoutes);
+app.use('/', syncRoutes);
 
 // Phone signup page: /pair?code=ABC123 serves the pairing web page.
 app.get('/pair', (_req, res) => {
