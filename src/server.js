@@ -20,14 +20,15 @@ app.use(express.json());
 app.get('/', (_req, res) => res.json({ ok: true, service: 'velix-backend' }));
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
-app.use('/auth', authRoutes);
-app.use('/pair', pairRoutes);
-app.use('/', syncRoutes);
-
-// Phone signup page: /pair?code=ABC123 serves the pairing web page.
+// Phone signup page: serve /pair?code=... BEFORE the /pair API router,
+// otherwise the router swallows this request.
 app.get('/pair', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'pair.html'));
 });
+
+app.use('/auth', authRoutes);
+app.use('/pair', pairRoutes);
+app.use('/', syncRoutes);
 
 const PORT = process.env.PORT || 8080;
 
