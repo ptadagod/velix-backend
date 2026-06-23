@@ -40,6 +40,12 @@ router.put('/favorites', async (req, res) => {
 });
 
 // DELETE /favorites/:type/:id
+// DELETE /favorites  → clear ALL of the user's favorites
+router.delete('/favorites', async (req, res) => {
+  await query('DELETE FROM favorites WHERE user_id = $1', [req.userId]);
+  res.json({ ok: true });
+});
+
 router.delete('/favorites/:type/:id', async (req, res) => {
   const mediaId = Number(req.params.id);
   const mediaType = String(req.params.type);
@@ -95,6 +101,12 @@ router.put('/continue', async (req, res) => {
 });
 
 // DELETE /continue/:type/:id  (e.g. finished, or removed from the row)
+// DELETE /continue  → clear ALL of the user's continue watching
+router.delete('/continue', async (req, res) => {
+  await query('DELETE FROM continue_watching WHERE user_id = $1', [req.userId]);
+  res.json({ ok: true });
+});
+
 router.delete('/continue/:type/:id', async (req, res) => {
   const mediaId = Number(req.params.id);
   const mediaType = String(req.params.type);
