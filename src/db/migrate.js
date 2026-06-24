@@ -51,6 +51,10 @@ CREATE TABLE IF NOT EXISTS continue_watching (
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
 CREATE INDEX IF NOT EXISTS idx_cw_user_updated ON continue_watching(user_id, updated_at DESC);
+
+-- Per-account profile settings (avatar id + hashed PIN), synced across devices.
+ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS pin_hash TEXT;
 `;
 
 export async function migrate() {
