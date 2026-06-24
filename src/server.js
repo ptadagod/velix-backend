@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.js';
 import pairRoutes from './routes/pair.js';
+import profileRoutes from './routes/profile.js';
 import syncRoutes from './routes/sync.js';
 import { migrate } from './db/migrate.js';
 
@@ -28,6 +29,7 @@ app.get('/pair', (_req, res) => {
 
 app.use('/auth', authRoutes);
 app.use('/pair', pairRoutes);
+app.use('/', profileRoutes);
 app.use('/', syncRoutes);
 
 const PORT = process.env.PORT || 8080;
