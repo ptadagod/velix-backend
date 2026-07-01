@@ -71,7 +71,7 @@
     player = new YT.Player('player', {
       videoId: videoId,
       playerVars: {
-        autoplay: 1,
+        autoplay: 0,
         mute: 0,
         controls: 0,
         modestbranding: 1,
@@ -90,7 +90,11 @@
           // (viewer preference, uploader default, forced accessibility track).
           try { e.target.unloadModule('captions'); } catch (err) {}
           e.target.unMute();
-          e.target.playVideo();
+          // Deliberately NOT calling playVideo() here — the video loads/buffers
+          // to its first frame (cued) and sits paused. Android calls
+          // startPlayback() below at the exact moment it begins the reveal
+          // fade, so the trailer plays from 0:00 in sync with becoming visible
+          // instead of already being several seconds in by the time it's shown.
           startEndedBackupPoll();
         },
         onStateChange: function (e) {
@@ -142,6 +146,13 @@
         notify('onDebugState', 'poll_error:' + e);
       }
     }, 500);
+  }
+
+  // Called from Android (evaluateJavascript) at the exact moment the reveal
+  // fade begins, so the trailer starts from 0:00 in sync with becoming
+  // visible — see the onReady comment above for why autoplay is off.
+  function startPlayback() {
+    try { if (player) player.playVideo(); } catch (e) {}
   }
 </script>
 </body>
