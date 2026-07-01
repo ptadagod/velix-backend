@@ -94,10 +94,11 @@
           startEndedBackupPoll();
         },
         onStateChange: function (e) {
-          notify('onDebugState', 'event:' + e.data);
-          if (e.data === YT.PlayerState.PLAYING) {
+          var st = Number(e.data);
+          notify('onDebugState', 'event:' + st);
+          if (st === YT.PlayerState.PLAYING) {
             if (!reported.playing) { reported.playing = true; notify('onPlaying'); }
-          } else if (e.data === YT.PlayerState.ENDED) {
+          } else if (st === YT.PlayerState.ENDED) {
             if (!reported.ended) { reported.ended = true; notify('onEnded'); }
           }
         },
@@ -128,7 +129,7 @@
     endedPollTimer = setInterval(function () {
       if (!player) return;
       try {
-        var state = player.getPlayerState();
+        var state = Number(player.getPlayerState());
         if (state !== lastLoggedState) {
           lastLoggedState = state;
           notify('onDebugState', state);
