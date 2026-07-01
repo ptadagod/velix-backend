@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+  }
+  /* Cover-fit crop, same math as CSS background-size:cover for a 16:9 source:
+     size by whichever dimension is the tighter fit, then center and clip the
+     overflow via the parent's overflow:hidden. No Android-side transform
+     guessing needed — this is exact, and easy to retune (see VERTICAL_ANCHOR
+     below) directly in this file. */
+  #wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  #player {
+    position: absolute;
+    left: 50%;
+    top: 50%; /* vertical anchor — see comment below to bias up/down */
+    width: 100vw;
+    height: 56.25vw;   /* 100/16*9 */
+    min-height: 100vh;
+    min-width: 177.78vh; /* 100/9*16 */
+    transform: translate(-50%, -50%);
+  }
+  #player iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+</style>
+</head>
+<body>
+<div id="wrap"><div id="player"></div></div>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+  // ---- Read the video id from ?v=... ----
+  function qs(name) {
+    var m = new RegExp('[?&]' + name + '=([^&]*)').exec(location.search);
+    return m ? decodeURIComponent(m[1]) : null;
+  }
+  var videoId = qs('v');
+
+  // ---- Report events back to the Android WebView via the JS interface ----
+  // (registered as "AndroidTrailer" — see MediaRowAdapter.kt). Guarded with
+  // try/catch since this page can also be opened in a plain browser for testing.
+  var reported = { playing: false, ended: false };
+  function notify(name, data) {
+    try {
+      if (window.AndroidTrailer && window.AndroidTrailer[name]) {
+        window.AndroidTrailer[name](data === undefined ? '' : String(data));
+      }
+    } catch (e) { /* not running inside the app — fine, just a no-op */ }
+  }
+
+  var player;
+
+  function onYouTubeIframeAPIReady() {
+    if (!videoId) { notify('onError', 'no_video_id'); return; }
+    player = new YT.Player('player', {
+      videoId: videoId,
+      playerVars: {
+        autoplay: 1,
+        mute: 1,
+        controls: 0,
+        modestbranding: 1,
+        playsinline: 1,
+        rel: 0,
+        iv_load_policy: 3,
+        fs: 0,
+        disablekb: 1,
+        cc_load_policy: 0
+      },
+      events: {
+        onReady: function (e) {
+          // The real, documented, reliable way to kill captions — operates on
+          // the player's actual captions module rather than guessing at DOM
+          // elements or text tracks, so it works regardless of why they were on
+          // (viewer preference, uploader default, forced accessibility track).
+          try { e.target.unloadModule('captions'); } catch (err) {}
+          e.target.mute();
+          e.target.playVideo();
+        },
+        onStateChange: function (e) {
+          if (e.data === YT.PlayerState.PLAYING) {
+            if (!reported.playing) { reported.playing = true; notify('onPlaying'); }
+          } else if (e.data === YT.PlayerState.ENDED) {
+            if (!reported.ended) { reported.ended = true; notify('onEnded'); }
+          }
+        },
+        onError: function (e) {
+          notify('onError', e.data);
+        }
+      }
+    });
+  }
+</script>
+</body>
+</html>
