@@ -91,6 +91,7 @@
           try { e.target.unloadModule('captions'); } catch (err) {}
           e.target.mute();
           e.target.playVideo();
+          startEndedBackupPoll();
         },
         onStateChange: function (e) {
           if (e.data === YT.PlayerState.PLAYING) {
@@ -104,6 +105,27 @@
         }
       }
     });
+  }
+
+  // Backup for the "ended" event: the postMessage-based onStateChange callback
+  // above doesn't always fire reliably (seen in testing — same class of issue as
+  // the "playing" event needing a watchdog on the Android side). Poll the
+  // player's actual current position against the video's duration directly as a
+  // fallback, so the hero still advances even if that event is missed.
+  var endedPollTimer = null;
+  function startEndedBackupPoll() {
+    if (endedPollTimer) return;
+    endedPollTimer = setInterval(function () {
+      if (reported.ended || !player) return;
+      try {
+        var dur = player.getDuration();
+        var cur = player.getCurrentTime();
+        if (dur > 0 && cur >= dur - 0.5) {
+          reported.ended = true;
+          notify('onEnded');
+        }
+      } catch (e) {}
+    }, 1000);
   }
 </script>
 </body>
