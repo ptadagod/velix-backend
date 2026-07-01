@@ -94,6 +94,7 @@
           startEndedBackupPoll();
         },
         onStateChange: function (e) {
+          notify('onDebugState', 'event:' + e.data);
           if (e.data === YT.PlayerState.PLAYING) {
             if (!reported.playing) { reported.playing = true; notify('onPlaying'); }
           } else if (e.data === YT.PlayerState.ENDED) {
@@ -110,22 +111,36 @@
   // Backup for the "ended" event: the postMessage-based onStateChange callback
   // above doesn't always fire reliably (seen in testing — same class of issue as
   // the "playing" event needing a watchdog on the Android side). Poll the
-  // player's actual current position against the video's duration directly as a
-  // fallback, so the hero still advances even if that event is missed.
+  // player's actual reported state directly (more authoritative than comparing
+  // currentTime to duration, which can misbehave if position resets at the end)
+  // as a fallback, so the hero still advances even if that event is missed.
+  //
+  // Also logs every state CHANGE back to Android (not every poll tick) via
+  // onDebugState — this is diagnostic: if "ended" is still missed after this,
+  // the logged sequence tells us whether the player ever actually reports
+  // ENDED (state 0) at all, versus getting stuck somewhere else entirely
+  // (e.g. an error state that just looks similar) — real data instead of
+  // another guess.
   var endedPollTimer = null;
+  var lastLoggedState = null;
   function startEndedBackupPoll() {
     if (endedPollTimer) return;
     endedPollTimer = setInterval(function () {
-      if (reported.ended || !player) return;
+      if (!player) return;
       try {
-        var dur = player.getDuration();
-        var cur = player.getCurrentTime();
-        if (dur > 0 && cur >= dur - 0.5) {
+        var state = player.getPlayerState();
+        if (state !== lastLoggedState) {
+          lastLoggedState = state;
+          notify('onDebugState', state);
+        }
+        if (!reported.ended && state === YT.PlayerState.ENDED) {
           reported.ended = true;
           notify('onEnded');
         }
-      } catch (e) {}
-    }, 1000);
+      } catch (e) {
+        notify('onDebugState', 'poll_error:' + e);
+      }
+    }, 500);
   }
 </script>
 </body>
