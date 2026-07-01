@@ -17,6 +17,11 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Serve static files from /public (e.g. hero-trailer.html) BEFORE the
+// root-mounted routers below — otherwise their auth middleware intercepts
+// requests for real files ("Missing token" on a plain static file request).
+app.use(express.static(path.join(__dirname, '..', 'public')));
+
 // Health check (Railway pings this).
 app.get('/', (_req, res) => res.json({ ok: true, service: 'velix-backend' }));
 app.get('/health', (_req, res) => res.json({ ok: true }));
