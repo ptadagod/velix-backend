@@ -72,7 +72,7 @@
       videoId: videoId,
       playerVars: {
         autoplay: 1,
-        mute: 1,
+        mute: 0,
         controls: 0,
         modestbranding: 1,
         playsinline: 1,
@@ -89,7 +89,7 @@
           // elements or text tracks, so it works regardless of why they were on
           // (viewer preference, uploader default, forced accessibility track).
           try { e.target.unloadModule('captions'); } catch (err) {}
-          e.target.mute();
+          e.target.unMute();
           e.target.playVideo();
           startEndedBackupPoll();
         },
